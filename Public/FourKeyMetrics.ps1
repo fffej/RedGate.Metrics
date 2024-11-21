@@ -98,7 +98,7 @@ function global:Get-ReleaseMetricsForCheckout {
     Push-Location $checkoutLocation
 
     $releases = Get-Releases $releaseTagPattern $fixTagPattern
-    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases $authors
+    Get-ReleaseMetrics $releases $repoSubDirs $startDate $ignoreReleases $authors $excludeList
 
     Pop-Location
 }
@@ -151,6 +151,7 @@ function global:Get-ReleaseMetrics {
         [string]$startDate,
         [string[]]$ignoreReleases,
         [string[]]$authors,
+        [string]$excludeList,
         [string]$componentName
     )
     $releases = $releases | Sort-Object -Property Date
@@ -183,7 +184,7 @@ function global:Get-ReleaseMetrics {
         }
 
         if (Assert-ReleaseNotIgnored $ThisRelease.TagRef $ignoreReleases) {
-            $CommitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors | Foreach-Object -Process { $thisRelease.Date - $_.Date } 
+            $CommitAges = Get-CommitsBetweenTags $previousRelease.TagRef $thisRelease.TagRef $subDirs $authors $excludeList | Foreach-Object -Process { $thisRelease.Date - $_.Date }
         }
         else {
             $CommitAges = $null;
@@ -216,11 +217,14 @@ function Assert-ReleaseNotIgnored($thisReleaseTagRef, $ignoreReleases) {
 .SYNOPSIS
 Get a list of all commits added to master between two release tags
 #>
-function Get-CommitsBetweenTags($start, $end, $subDirs, $authors) {
+function Get-CommitsBetweenTags($start, $end, $subDirs, $authors, $excludeList) {
     # Assume we're not filtering by authors, but build up a filter if we want one
     $authorFilter = ""
     foreach ($author in $authors) {
         $authorFilter = $authorFilter + "--author=`"$author`" "
+    }
+    if ($authorFilter == "" ){
+        $authorFilter = "-p --author='^((?!$excludeList).*)$'"
     }
 
     $gitCommand = "git log --pretty=format:`"%h,%ai`" `"$start..$end`" --no-merges $authorFilter -- $subDirs"
