@@ -20,7 +20,7 @@ We use the historical data stored in our `git` repositories to provide sufficien
 
 ## Requirements
 
-This code should run with any recent version of `PowerShell` or `PowerShell Core`. This should include running on non-Windows hosts.
+This code should run with any recent version of `Python`. This should include running on non-Windows hosts.
 
 You'll need the `git` commandline tools available, and the repository/s you want to analyse.
 
@@ -30,18 +30,18 @@ You'll need the `git` commandline tools available, and the repository/s you want
 
 There's a helper method available to create a simple report for a single-product repository:
 
-`Invoke-FourKeyMetricsReportGeneration`
+`invoke_four_key_metrics_report_generation`
 
-The `Publish-FourKeyMetricsReport` method is specific to Redgate's infrastructure, but is optional and easily skipped by not providing suitable credentials.
+The `publish_four_key_metrics_report` method is specific to Redgate's infrastructure, but is optional and easily skipped by not providing suitable credentials.
 
 ### Complex Report Generation
 
 When reporting on the combination of multiple products, we need to do a little more work:
 
-* Generate the release metrics for each product using `Get-ReleaseMetricsForCheckout`
+* Generate the release metrics for each product using `get_release_metrics_for_checkout`
 * Combine those release metrics into a single list
-* Calculate average metrics for that single list using `Get-BucketedReleaseMetricsForReport`
-* Create an HTML report using `New-FourKeyMetricsReport`
+* Calculate average metrics for that single list using `get_bucketed_release_metrics_for_report`
+* Create an HTML report using `new_four_key_metrics_report`
 
 ## How are they calculated?
 
@@ -129,6 +129,6 @@ For simplicity, the following convention is recommended:
 
 ## Developer Information
 
-Tests can be run by executing `FourKeyMetrics.Tests.ps1`. This will require `Pester`.
+Tests can be run by executing `Tests/FourKeyMetrics_Tests.py`. This will require `unittest`.
 
 This code wasn't test-driven, so coverage is patchy. All future work should be test-driven, including refactoring and bug-fixing.
