@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime, timedelta, timezone
 import subprocess
 import fnmatch
 import json
@@ -42,7 +42,7 @@ def get_releases(release_tag_pattern, fix_tag_pattern):
             print(f"Warning: Tag {split[1]} is a light-weight tag and will be ignored")
             continue
 
-        date = datetime.datetime.strptime(split[0], "%Y-%m-%d %H:%M:%S %z")
+        date = datetime.strptime(split[0], "%Y-%m-%d %H:%M:%S %z")
         releases.append({
             "TagRef": split[1],
             "Date": date,
@@ -52,7 +52,7 @@ def get_releases(release_tag_pattern, fix_tag_pattern):
 
 def get_release_metrics(releases, sub_dirs, start_date, ignore_releases, authors=None, component_name=None):
     # Ensure releases have timezone info
-    utc = datetime.timezone.utc
+    utc = timezone.utc
     releases = [{**release, 
                 "Date": release["Date"].replace(tzinfo=utc) if release["Date"].tzinfo is None else release["Date"]} 
                for release in releases]
@@ -157,21 +157,26 @@ def get_commits_between_tags(start, end, sub_dirs, authors):
         split = commit.split(",")
         commits.append({
             "SHA": split[0],
-            "Date": datetime.datetime.strptime(split[1], "%Y-%m-%d %H:%M:%S %z")
+            "Date": datetime.strptime(split[1], "%Y-%m-%d %H:%M:%S %z")
         })
     return commits
 
+# For mockability
+def get_date():
+    return datetime.now()
+
 def get_bucketed_release_metrics_for_report(lookback_months, release_metrics, window_size_days, window_interval_days):
-    now = datetime.datetime.now()
-    earliest_date = now - datetime.timedelta(days=lookback_months * 30)
+       
+    noww = get_date()
+    earliest_date = noww - timedelta(days=lookback_months * 30)
 
     bucketed_metrics = []
-    end_date = now
+    end_date = noww
     while end_date > earliest_date:
-        start_date = end_date - datetime.timedelta(days=window_size_days)
+        start_date = end_date - timedelta(days=window_size_days)
         lookback_releases = [release for release in release_metrics if start_date <= release["ToDate"] <= end_date]
         bucketed_metrics.append(get_bucketed_metrics_for_period(lookback_releases, end_date))
-        end_date -= datetime.timedelta(days=window_interval_days)
+        end_date -= timedelta(days=window_interval_days)
 
     return bucketed_metrics
 
