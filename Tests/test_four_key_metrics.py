@@ -226,7 +226,7 @@ class TestFourKeyMetrics(unittest.TestCase):
         get_date_backup = get_bucketed_release_metrics_for_report.__globals__.get("get_date")
         get_bucketed_release_metrics_for_report.__globals__["get_date"] = mock_get_date
 
-        metrics = get_bucketed_release_metrics_for_report(releases, lookback_months=1, window_size_days=14, window_interval_days=7)
+        metrics = get_bucketed_release_metrics_for_report(1, releases, 14, 7)
         metrics = sorted(metrics, key=lambda x: x["EndDate"], reverse=True)
 
         expected_end_dates = [
@@ -273,7 +273,7 @@ class TestFourKeyMetrics(unittest.TestCase):
 
     def test_get_commits_between_tags(self):
         with unittest.mock.patch("subprocess.check_output", return_value=b"b78adbc2f,2020-08-25 09:15:30 +0000\n17d887ea7,2020-08-25 10:54:28 +0100"):
-            commits = get_commits_between_tags("releases/1", "releases/2", ["."])
+            commits = get_commits_between_tags("releases/1", "releases/2", ["."], None)
             self.assertEqual(len(commits), 2)
             self.assertEqual(commits[0]["SHA"], "b78adbc2f")
             self.assertEqual(commits[0]["Date"], datetime.strptime("2020-08-25 09:15:30 +0000", "%Y-%m-%d %H:%M:%S %z"))
@@ -295,7 +295,7 @@ class TestFourKeyMetrics(unittest.TestCase):
         ]
 
         with unittest.mock.patch("subprocess.check_output", return_value=b"b78adbc2f,2020-08-25 09:15:30 +0000\n17d887ea7,2020-08-25 10:54:28 +0100"):
-            release_metrics = get_release_metrics(releases, [""], "2018-01-01")
+            release_metrics = get_release_metrics(releases, [""], datetime(2018, 1, 1), [""])
             self.assertEqual(release_metrics[0]["Interval"], timedelta(days=1))
             self.assertTrue(release_metrics[0]["IsFix"])
             self.assertEqual(release_metrics[0]["FailureDuration"], timedelta(days=1))
