@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock
 import fnmatch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from Public.FourKeyMetrics import (
     get_median,
     merge_release_metrics_into_one_pseudo_repository,
@@ -281,21 +281,22 @@ class TestFourKeyMetrics(unittest.TestCase):
             self.assertEqual(commits[1]["Date"], datetime.strptime("2020-08-25 10:54:28 +0100", "%Y-%m-%d %H:%M:%S %z"))
 
     def test_get_release_metrics(self):
+        utc = timezone.utc
         releases = [
             {
                 "TagRef": "releases/0.0",
-                "Date": datetime(2019, 4, 1),
+                "Date": datetime(2019, 4, 1, tzinfo=utc),
                 "IsFix": False,
             },
             {
                 "TagRef": "releases/0.1/fix",
-                "Date": datetime(2019, 4, 2),
+                "Date": datetime(2019, 4, 2, tzinfo=utc),
                 "IsFix": True,
             },
         ]
 
         with unittest.mock.patch("subprocess.check_output", return_value=b"b78adbc2f,2020-08-25 09:15:30 +0000\n17d887ea7,2020-08-25 10:54:28 +0100"):
-            release_metrics = get_release_metrics(releases, [""], datetime(2018, 1, 1), [""])
+            release_metrics = get_release_metrics(releases, [""], datetime(2018, 1, 1, tzinfo=utc), [""])
             self.assertEqual(release_metrics[0]["Interval"], timedelta(days=1))
             self.assertTrue(release_metrics[0]["IsFix"])
             self.assertEqual(release_metrics[0]["FailureDuration"], timedelta(days=1))

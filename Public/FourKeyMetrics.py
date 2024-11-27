@@ -42,14 +42,66 @@ def get_releases(release_tag_pattern, fix_tag_pattern):
             print(f"Warning: Tag {split[1]} is a light-weight tag and will be ignored")
             continue
 
+        date = datetime.datetime.strptime(split[0], "%Y-%m-%d %H:%M:%S %z")
         releases.append({
             "TagRef": split[1],
-            "Date": datetime.datetime.strptime(split[0], "%Y-%m-%d %H:%M:%S %z"),
+            "Date": date,
             "IsFix": fnmatch.fnmatch(split[1], f"refs/tags/{fix_tag_pattern}")
         })
     return releases
 
 def get_release_metrics(releases, sub_dirs, start_date, ignore_releases, authors=None, component_name=None):
+    # Ensure releases have timezone info
+    utc = datetime.timezone.utc
+    releases = [{**release, 
+                "Date": release["Date"].replace(tzinfo=utc) if release["Date"].tzinfo is None else release["Date"]} 
+               for release in releases]
+    
+    # Ensure start_date has timezone info
+    if start_date.tzinfo is None:
+        start_date = start_date.replace(tzinfo=utc)
+        
+    releases = sorted(releases, key=lambda x: x["Date"])
+    previous_success = releases[0]
+    release_metrics = []
+
+    for i in range(len(releases) - 1):
+        previous_release = releases[i]
+        this_release = releases[i + 1]
+
+        if previous_release["Date"] <= start_date:
+            continue
+
+        if not previous_release["IsFix"]:
+            previous_success = previous_release
+
+        if this_release["IsFix"]:
+            next_release = releases[i + 2] if i + 2 < len(releases) else None
+            failure_duration = None if next_release and next_release["IsFix"] else this_release["Date"] - previous_success["Date"]
+        else:
+            failure_duration = None
+
+        if assert_release_not_ignored(this_release["TagRef"], ignore_releases):
+            commit_ages = [this_release["Date"] - commit["Date"] for commit in get_commits_between_tags(previous_release["TagRef"], this_release["TagRef"], sub_dirs, authors)]
+        else:
+            commit_ages = None
+
+        if commit_ages is None:
+            print(f"Warning: Release {this_release['TagRef']} has no relevant commits and will be ignored")
+        else:
+            release_metrics.append({
+                "Component": component_name,
+                "From": previous_release["TagRef"],
+                "To": this_release["TagRef"],
+                "FromDate": previous_release["Date"],
+                "ToDate": this_release["Date"],
+                "Interval": this_release["Date"] - previous_release["Date"],
+                "IsFix": this_release["IsFix"],
+                "FailureDuration": failure_duration,
+                "CommitAges": commit_ages
+            })
+
+    return release_metrics
     releases = sorted(releases, key=lambda x: x["Date"])
     previous_success = releases[0]
     release_metrics = []
