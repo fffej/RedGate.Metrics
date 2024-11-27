@@ -1,6 +1,6 @@
 import unittest
 import unittest.mock
-from fnmatch import fnmatch
+import fnmatch
 from datetime import datetime, timedelta
 from Public.FourKeyMetrics import (
     get_median,

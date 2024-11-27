@@ -1,6 +1,7 @@
 import os
 import datetime
 import subprocess
+import fnmatch
 import json
 
 def invoke_four_key_metrics_report_generation(octopus_feed_api_key, checkout_location, product_name, release_tag_pattern, fix_tag_pattern, report_package_name=None, report_version_number=None, repo_sub_dirs=None, start_date="01/01/2018", lookback_months=12, window_size_days=30, window_interval_days=7, out_file_path=".", ignore_releases=None, out_file_name="index.html"):
